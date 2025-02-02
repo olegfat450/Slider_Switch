@@ -12,6 +12,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -55,6 +57,7 @@ class MainActivity : ComponentActivity() {
 
     private var onExit = mutableStateOf(false)
     private var slider = mutableStateOf(false)
+    private var text =  mutableStateOf("Нет доступа")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
           enableEdgeToEdge()
@@ -83,19 +86,26 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun Start() {
 
-        val text = remember {  mutableStateOf("") }
+           val pr = remember { mutableStateOf(100.dp) }
 
         Scaffold ( containerColor = Color.LightGray, topBar = toolBar)
 
         {
 
           Column (modifier = Modifier.fillMaxSize().padding(it), horizontalAlignment = Alignment.CenterHorizontally){
-            Text(text = text.value, fontSize = 22.sp, fontStyle = FontStyle.Italic, modifier = Modifier.fillMaxWidth().height(height = 400.dp).padding(12.dp).
-            background(color = Color.White).border(width = 2.dp, color = Color.Black).verticalScroll(state = rememberScrollState()).padding(12.dp))
 
-             Button(onClick = { if (slider.value)  text.value = Base().text else text.value = "Нет доступа"},Modifier.padding(top = 18.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)) { Text(text = "Загрузить данные") }
+              Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().height(400.dp).padding(12.dp).background(color = Color.White).border(width = 2.dp, color = Color.Black)){
+            Text(text = text.value, fontSize = 22.sp, fontStyle = FontStyle.Italic, modifier = Modifier.fillMaxSize().
+            verticalScroll(state = rememberScrollState()).padding(12.dp))
 
-              Switch(checked = slider.value,onCheckedChange = {slider.value = if (slider.value) false else true}, modifier = Modifier.padding(top = 18.dp))
+               CircularProgressIndicator(modifier = Modifier.size(pr.value))
+
+
+              }
+
+             Button(onClick = { if (slider.value) { text.value =  Base().text; pr.value = 0.dp  } else { text.value = "Нет доступа"; pr.value = 100.dp}},Modifier.padding(top = 18.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)) { Text(text = "Загрузить данные") }
+
+              Switch(checked = slider.value,onCheckedChange = { slider.value = if (slider.value) false else true }, modifier = Modifier.padding(top = 18.dp))
         }}
 
 
