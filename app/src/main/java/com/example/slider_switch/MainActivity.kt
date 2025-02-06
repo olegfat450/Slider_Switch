@@ -10,6 +10,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,11 +27,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -38,26 +43,41 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.slider_switch.ui.theme.Slider_SwitchTheme
 import dalvik.annotation.optimization.CriticalNative
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
 
     private var onExit = mutableStateOf(false)
     private var slider = mutableStateOf(false)
-    private var text =  mutableStateOf("Нет доступа")
+    private var text =  mutableStateOf("")
+    private var pr = mutableStateOf(0.dp)
+    var xOffset = mutableStateOf(-100f)
+    var yOffset  = mutableStateOf(-200f)
+    private lateinit var scope: CoroutineScope
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
           enableEdgeToEdge()
@@ -68,27 +88,17 @@ class MainActivity : ComponentActivity() {
                  if (onExit.value) { Alert() }
 
                  Start()
-
-
-
-
              }
-
-
-
-
-
-
-
     }
 
 
     @Composable
     private fun Start() {
+         scope = rememberCoroutineScope()
 
-           val pr = remember { mutableStateOf(100.dp) }
 
-        Scaffold ( containerColor = Color.LightGray, topBar = toolBar)
+
+        Scaffold ( containerColor = Color.LightGray, topBar = toolBar, floatingActionButton =  floatingActionButton )
 
         {
 
@@ -96,20 +106,38 @@ class MainActivity : ComponentActivity() {
 
               Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().height(400.dp).padding(12.dp).background(color = Color.White).border(width = 2.dp, color = Color.Black)){
             Text(text = text.value, fontSize = 22.sp, fontStyle = FontStyle.Italic, modifier = Modifier.fillMaxSize().
-            verticalScroll(state = rememberScrollState()).padding(12.dp))
+            verticalScroll(state = rememberScrollState()).padding(12.dp), textAlign = TextAlign.Center)
 
                CircularProgressIndicator(modifier = Modifier.size(pr.value))
 
 
               }
 
-             Button(onClick = { if (slider.value) { text.value =  Base().text; pr.value = 0.dp  } else { text.value = "Нет доступа"; pr.value = 100.dp}},Modifier.padding(top = 18.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)) { Text(text = "Загрузить данные") }
-
               Switch(checked = slider.value,onCheckedChange = { slider.value = if (slider.value) false else true }, modifier = Modifier.padding(top = 18.dp))
         }}
 
 
 
+
+    }
+
+
+    val floatingActionButton = @Composable { FloatingActionButton( containerColor = Color.Blue, contentColor = Color.White,
+         modifier = Modifier.offset { IntOffset(x = xOffset.value.roundToInt(), y = yOffset.value.roundToInt())}
+             .pointerInput (Unit) { detectDragGestures { change, dragAmount ->
+                 xOffset.value += dragAmount.x
+                 yOffset.value += dragAmount.y
+             }},
+
+        onClick = { if (slider.value) { text.value = ""; scope.launch { loadBase() } } else { text.value = "Нет доступа";}},
+        content = {Icon(Icons.Filled.Refresh, contentDescription = "")}) }
+
+    private suspend fun loadBase() {
+
+        pr.value = 140.dp
+        delay(2000)
+        text.value = Base().text
+        pr.value = 0.dp
 
     }
 
